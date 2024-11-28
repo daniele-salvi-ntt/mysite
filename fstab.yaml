@@ -1,12 +1,2 @@
 mountpoints:
   /: https://drive.google.com/drive/u/2/folders/14fx4WXsyeaqlrOHIgtWziGkdUrsNa5-B
-  /aem-sites:
-    url: "https://author-p86652-e735525.adobeaemcloud.com"
-    type: "markup"
-    suffix: ".html"
-logging:
-  level: debug
-  file: /var/log/fstab.log
-monitoring:
-  enabled: true
-  interval: 300
