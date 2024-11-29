@@ -16,9 +16,11 @@ export default async function decorate(block) {
       $(image).attr('active','');
     }
     $(image).append(images[i].firstElementChild);
-    $(image).on('click',()=>{changeElement($(imageList))})
     $(imageList).append($(image));
   }
   $(carousel).append(imageList);
+  $(carousel).on('click',()=>{changeElement($(imageList))})
+  window.setInterval(()=>{changeElement($(imageList))}, 5000);
   $(block).append(carousel);
+
 }
