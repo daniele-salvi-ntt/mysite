@@ -2,16 +2,53 @@
   display: flex;
   justify-content: center;
 }
+
+#carousel-inner{
+  display: flex;
+  justify-content: center;
+  position:relative;
+}
 .carousel-item{
+  position:absolute;
   display: none;
+  top: 0%;
+  /* position:absolute;
+  animation:linear infinite;
+  animation-name:right;
+  animation-duration:1s; */
+}
+.carousel-item{
+  min-width: 100%;
+  min-height: 100%;
+}
+.carousel-item picture{
+  min-width: 100%;
 }
 .carousel-item img{
+  object-fit: cover;
+  position:relative;
   display: block;
   height: 600px;
   max-height: 600px;
+  padding:0;
+  margin:0;
+  min-width: 100%;
+  min-height: 100%;
 }
+/* @keyframes right{
+  0%{
+    left:0
+  }
+  50%{
+    motion-offset:50%
+  }
+  100%{
+    left:100%
+  }
+} */
 .carousel{
   display: block;
   height: 600px;
   box-sizing: content-box;
+  overflow-x: hidden;
 }
