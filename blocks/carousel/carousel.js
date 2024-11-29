@@ -1,33 +1,24 @@
-import { getMetadata } from "../../scripts/aem";
-import { loadFragment } from "../fragment/fragment";
-
-function changeElement(carousel,arrow,elementVisible){
-
+function changeElement(imageList){
+  const nextCandidate = $('.carousel-item[active] ~ .carousel-item',imageList)[0];
+  const nextImage = nextCandidate != null ? nextCandidate : $('.carousel-item',imageList)[0]
+  $('.carousel-item[active]',imageList).attr('active',null); 
+  $(nextImage).attr('active','');
 }
 
 export default async function decorate(block) {
 
-  const carouselMeta = getMetadata('carousel');
-  const carouselPath = carouselMeta ? new URL(carouselMeta,window.location).pathname : '/carousel';
-  const fragment = await loadFragment(carouselPath);
-
-  const carousel=document.createElement('div');
-  carousel.id='carousel';
-  carousel.append(fragment.firstElementChild);
-  carousel.firstElementChild.classList.add('active');
-  while(fragment.firstElementChild) carousel.append(fragment.firstElementChild);
-
-  const leftArrow = document.createElement('a');
-  leftArrow.classList.add('left');
-  leftArrow.onclick((e)=>{
-    changeElement(carousel,leftArrow,document.querySelector('#carousel .carousel-element.active'));
-    e.preventDeafult();
-  })
-  const rightArrow = document.createElement('a');
-  rightArrow.classList.add('right');
-  rightArrow.onclick((e)=>{
-    changeElement(carousel,leftArrow,document.querySelector('#carousel .carousel-element.active'));
-    e.preventDeafult();
-  })
-
+  const carousel=$('<div id="carouselComp" class="carousel"></div>');
+  const images = [...block.children];
+  const imageList = $('<div id="carousel-inner"></div>');
+  for(var i in images){
+    var image = $('<div class="carousel-item"></div>')
+    if(i == 0){
+      $(image).attr('active','');
+    }
+    $(image).append(images[i].firstElementChild);
+    $(image).on('click',()=>{changeElement($(imageList))})
+    $(imageList).append($(image));
+  }
+  $(carousel).append(imageList);
+  $(block).append(carousel);
 }

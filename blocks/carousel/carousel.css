@@ -1,0 +1,17 @@
+.carousel-item[active]{
+  display: flex;
+  justify-content: center;
+}
+.carousel-item{
+  display: none;
+}
+.carousel-item img{
+  display: block;
+  height: 600px;
+  max-height: 600px;
+}
+.carousel{
+  display: block;
+  height: 600px;
+  box-sizing: content-box;
+}
