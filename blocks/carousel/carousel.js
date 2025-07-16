@@ -36,14 +36,14 @@ export default function decorate(block) {
   const imageList = $('<div id="carousel-inner"></div>');
   images.keys().forEach((i) => {
     const image = $('<div class="carousel-item"></div>');
-    if (i == 0) {
+    if (i === 0) {
       $(image).attr('active', '');
     }
     $(image).append(images[i].firstElementChild.firstElementChild);
     $(imageList).append($(image));
   });
   $(carousel).append(imageList);
-  $(carousel).on('click', () => { changeElement($(imageList)) });
+  $(carousel).on('click', () => { changeElement($(imageList)); });
   window.setInterval(() => {
     timer -= 1;
     if (timer === 0) {
