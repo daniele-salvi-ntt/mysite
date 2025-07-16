@@ -1,11 +1,12 @@
 module.exports = {
   root: true,
-  extends: 'airbnb-base',
+  extends: [
+    'airbnb-base',
+    'plugin:json/recommended',
+    'plugin:xwalk/recommended',
+  ],
   env: {
     browser: true,
-    commonjs: true,
-    es6: true,
-    jquery: true,
   },
   parser: '@babel/eslint-parser',
   parserOptions: {
@@ -15,8 +16,7 @@ module.exports = {
   },
   rules: {
     'import/extensions': ['error', { js: 'always' }], // require js file extensions in imports
-    'linebreak-style': ['off', 'unix'], // enforce unix linebreaks
+    'linebreak-style': ['error', 'unix'], // enforce unix linebreaks
     'no-param-reassign': [2, { props: false }], // allow modifying properties of param
-    'no-trailing-spaces': [2, { skipBlankLines: true, ignoreComments: true }],
   },
 };

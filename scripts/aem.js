@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -16,12 +16,12 @@ function sampleRUM(checkpoint, data) {
   const timeShift = () => (window.performance ? window.performance.now() : Date.now() - window.hlx.rum.firstReadTime);
   try {
     window.hlx = window.hlx || {};
-    sampleRUM.enhance = () => {};
     if (!window.hlx.rum) {
+      sampleRUM.enhance = () => {};
       const param = new URLSearchParams(window.location.search).get('rum');
-      const weight = (window.SAMPLE_PAGEVIEWS_AT_RATE === 'high' && 10)
+      const weight = (param === 'on' && 1)
+        || (window.SAMPLE_PAGEVIEWS_AT_RATE === 'high' && 10)
         || (window.SAMPLE_PAGEVIEWS_AT_RATE === 'low' && 1000)
-        || (param === 'on' && 1)
         || 100;
       const id = Math.random().toString(36).slice(-4);
       const isSelected = param !== 'off' && Math.random() * weight < 1;
@@ -100,10 +100,14 @@ function sampleRUM(checkpoint, data) {
         sampleRUM.enhance = () => {
           // only enhance once
           if (document.querySelector('script[src*="rum-enhancer"]')) return;
-
+          const { enhancerVersion, enhancerHash } = sampleRUM.enhancerContext || {};
           const script = document.createElement('script');
+          if (enhancerHash) {
+            script.integrity = enhancerHash;
+            script.setAttribute('crossorigin', 'anonymous');
+          }
           script.src = new URL(
-            '.rum/@adobe/helix-rum-enhancer@^2/src/index.js',
+            `.rum/@adobe/helix-rum-enhancer@${enhancerVersion || '^2'}/src/index.js`,
             sampleRUM.baseURL,
           ).href;
           document.head.appendChild(script);
@@ -135,7 +139,12 @@ function setup() {
   const scriptEl = document.querySelector('script[src$="/scripts/scripts.js"]');
   if (scriptEl) {
     try {
-      [window.hlx.codeBasePath] = new URL(scriptEl.src).pathname.split('/scripts/scripts.js');
+      const scriptURL = new URL(scriptEl.src, window.location);
+      if (scriptURL.host === window.location.host) {
+        [window.hlx.codeBasePath] = scriptURL.pathname.split('/scripts/scripts.js');
+      } else {
+        [window.hlx.codeBasePath] = scriptURL.href.split('/scripts/scripts.js');
+      }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log(error);
@@ -144,11 +153,12 @@ function setup() {
 }
 
 /**
- * Auto initializiation.
+ * Auto initialization.
  */
 
 function init() {
   setup();
+  sampleRUM.collectBaseURL = window.origin;
   sampleRUM();
 }
 
@@ -363,6 +373,16 @@ function wrapTextNodes(block) {
   const wrap = (el) => {
     const wrapper = document.createElement('p');
     wrapper.append(...el.childNodes);
+    [...el.attributes]
+      // move the instrumentation from the cell to the new paragraph, also keep the class
+      // in case the content is a buttton and the cell the button-container
+      .filter(({ nodeName }) => nodeName === 'class'
+        || nodeName.startsWith('data-aue')
+        || nodeName.startsWith('data-richtext'))
+      .forEach(({ nodeName, nodeValue }) => {
+        wrapper.setAttribute(nodeName, nodeValue);
+        el.removeAttribute(nodeName);
+      });
     el.append(wrapper);
   };
 
@@ -435,6 +455,8 @@ function decorateIcon(span, prefix = '', alt = '') {
   img.src = `${window.hlx.codeBasePath}${prefix}/icons/${iconName}.svg`;
   img.alt = alt;
   img.loading = 'lazy';
+  img.width = 16;
+  img.height = 16;
   span.append(img);
 }
 
@@ -444,7 +466,7 @@ function decorateIcon(span, prefix = '', alt = '') {
  * @param {string} [prefix] prefix to be added to icon the src
  */
 function decorateIcons(element, prefix = '') {
-  const icons = [...element.querySelectorAll('span.icon')];
+  const icons = element.querySelectorAll('span.icon');
   icons.forEach((span) => {
     decorateIcon(span, prefix);
   });
@@ -455,14 +477,14 @@ function decorateIcons(element, prefix = '') {
  * @param {Element} main The container element
  */
 function decorateSections(main) {
-  main.querySelectorAll(':scope > div').forEach((section) => {
+  main.querySelectorAll(':scope > div:not([data-section-status])').forEach((section) => {
     const wrappers = [];
     let defaultContent = false;
     [...section.children].forEach((e) => {
-      if (e.tagName === 'DIV' || !defaultContent) {
+      if ((e.tagName === 'DIV' && e.className) || !defaultContent) {
         const wrapper = document.createElement('div');
         wrappers.push(wrapper);
-        defaultContent = e.tagName !== 'DIV';
+        defaultContent = e.tagName !== 'DIV' || !e.className;
         if (defaultContent) wrapper.classList.add('default-content-wrapper');
       }
       wrappers[wrappers.length - 1].append(e);
@@ -490,43 +512,6 @@ function decorateSections(main) {
       sectionMeta.parentNode.remove();
     }
   });
-}
-
-/**
- * Gets placeholders object.
- * @param {string} [prefix] Location of placeholders
- * @returns {object} Window placeholders object
- */
-// eslint-disable-next-line import/prefer-default-export
-async function fetchPlaceholders(prefix = 'default') {
-  window.placeholders = window.placeholders || {};
-  if (!window.placeholders[prefix]) {
-    window.placeholders[prefix] = new Promise((resolve) => {
-      fetch(`${prefix === 'default' ? '' : prefix}/placeholders.json`)
-        .then((resp) => {
-          if (resp.ok) {
-            return resp.json();
-          }
-          return {};
-        })
-        .then((json) => {
-          const placeholders = {};
-          json.data
-            .filter((placeholder) => placeholder.Key)
-            .forEach((placeholder) => {
-              placeholders[toCamelCase(placeholder.Key)] = placeholder.Text;
-            });
-          window.placeholders[prefix] = placeholders;
-          resolve(window.placeholders[prefix]);
-        })
-        .catch(() => {
-          // error loading placeholders
-          window.placeholders[prefix] = {};
-          resolve(window.placeholders[prefix]);
-        });
-    });
-  }
-  return window.placeholders[`${prefix}`];
 }
 
 /**
@@ -603,7 +588,7 @@ async function loadBlock(block) {
  */
 function decorateBlock(block) {
   const shortBlockName = block.classList[0];
-  if (shortBlockName) {
+  if (shortBlockName && !block.dataset.blockStatus) {
     block.classList.add('block');
     block.dataset.blockName = shortBlockName;
     block.dataset.blockStatus = 'initialized';
@@ -612,6 +597,8 @@ function decorateBlock(block) {
     blockWrapper.classList.add(`${shortBlockName}-wrapper`);
     const section = block.closest('.section');
     if (section) section.classList.add(`${shortBlockName}-container`);
+    // eslint-disable-next-line no-use-before-define
+    decorateButtons(block);
   }
 }
 
@@ -711,7 +698,6 @@ export {
   decorateIcons,
   decorateSections,
   decorateTemplateAndTheme,
-  fetchPlaceholders,
   getMetadata,
   loadBlock,
   loadCSS,
