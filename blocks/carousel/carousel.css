@@ -8,22 +8,24 @@
   justify-content: center;
   position:relative;
 }
+
 .carousel-item{
   position:absolute;
   display: none;
   top: 0%;
+  min-width: 100%;
+  min-height: 100%;
+
   /* position:absolute;
   animation:linear infinite;
   animation-name:right;
   animation-duration:1s; */
 }
-.carousel-item{
-  min-width: 100%;
-  min-height: 100%;
-}
+
 .carousel-item picture{
   min-width: 100%;
 }
+
 .carousel-item img{
   object-fit: cover;
   position:relative;
@@ -35,6 +37,7 @@
   min-width: 100%;
   min-height: 100%;
 }
+
 /* @keyframes right{
   0%{
     left:0
@@ -46,6 +49,7 @@
     left:100%
   }
 } */
+ 
 .carousel{
   display: block;
   height: 600px;
